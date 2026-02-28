@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0A0A0A">
+<title>FitVision PRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #00BFFF;
+    --accent-dim: rgba(0,191,255,0.15);
+    --accent-glow: rgba(0,191,255,0.4);
+    --bg: #0A0A0A;
+    --bg2: #111111;
+    --bg3: #1A1A1A;
+    --border: rgba(255,255,255,0.08);
+    --text: #F0F0F0;
+    --text-dim: rgba(240,240,240,0.5);
+    --error: #FF3B3B;
+    --success: #00FF88;
+    --font-mono: 'Space Mono', monospace;
+    --font-sans: 'DM Sans', sans-serif;
+    --nav-h: 64px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { 
+    width:100%; height:100%; background:var(--bg); color:var(--text); 
+    font-family:var(--font-sans); overflow:hidden; 
+  }
+  
+  /* SCROLLABLE CONTAINERS */
+  .scrollable { overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  
+  /* UTILITY */
+  .hidden { display:none !important; }
+  .mono { font-family:var(--font-mono); }
+  
+  /* VIEWS */
+  .view { 
+    position:fixed; inset:0; display:flex; flex-direction:column;
+    opacity:0; pointer-events:none; transition:opacity 0.4s ease;
+    background:var(--bg);
+  }
+  .view.active { opacity:1; pointer-events:all; }
+  
+  /* ============ SPLASH ============ */
+  #splash {
+    align-items:center; justify-content:center; gap:24px;
+    background:var(--bg); z-index:100;
+  }
+  .splash-logo svg { width:80px; height:80px; }
+  .splash-title {
+    font-family:var(--font-mono); font-size:28px; font-weight:700;
+    letter-spacing:0.05em; overflow:hidden; white-space:nowrap;
+    border-right:2px solid var(--accent);
+    animation: typing 1.5s steps(13,end) 0.3s forwards, blink 0.7s step-end infinite 1.8s;
+    width:0;
+  }
+  @keyframes typing { to { width:13ch; } }
+  @keyframes blink { 50% { border-color:transparent; } }
+  .splash-sub {
+    font-size:13px; color:var(--text-dim); letter-spacing:0.15em; text-transform:uppercase;
+    opacity:0; animation: fadeUp 0.6s ease 1.8s forwards;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+  .splash-bar {
+    width:200px; height:2px; background:var(--border); border-radius:2px; overflow:hidden;
+    opacity:0; animation: fadeUp 0.6s ease 2s forwards;
+  }
+  .splash-bar-fill {
+    height:100%; background:var(--accent); width:0;
+    animation: fillBar 1s ease 2s forwards;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  @keyframes fillBar { to { width:100%; } }
+
+  /* ============ PROFILE ============ */
+  #profile { z-index:50; }
+  .profile-scroll { flex:1; overflow-y:auto; padding:60px 24px 40px; }
+  .profile-header { margin-bottom:40px; }
+  .profile-header h1 { font-family:var(--font-mono); font-size:22px; margin-bottom:6px; }
+  .profile-header p { color:var(--text-dim); font-size:14px; }
+  
+  .form-group { margin-bottom:28px; }
+  .form-label { font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); margin-bottom:10px; display:block; }
+  .form-input {
+    width:100%; padding:14px 16px; background:var(--bg3); border:1px solid var(--border);
+    color:var(--text); font-family:var(--font-sans); font-size:15px; border-radius:8px;
+    outline:none; transition:border-color 0.3s;
+  }
+  .form-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
+  
+  .level-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .level-card {
+    padding:16px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:10px; cursor:pointer; transition:all 0.2s; text-align:center;
+  }
+  .level-card:hover { border-color:var(--accent); background:var(--accent-dim); }
+  .level-card.selected { border-color:var(--accent); background:var(--accent-dim); box-shadow:0 0 12px var(--accent-glow); }
+  .level-card .icon { font-size:24px; margin-bottom:6px; }
+  .level-card .name { font-size:13px; font-weight:600; }
+  .level-card .desc { font-size:11px; color:var(--text-dim); margin-top:2px; }
+  
+  .theme-grid { display:flex; gap:12px; flex-wrap:wrap; }
+  .theme-dot {
+    width:36px; height:36px; border-radius:50%; cursor:pointer;
+    border:2px solid transparent; transition:all 0.2s; position:relative;
+  }
+  .theme-dot.selected { border-color:white; transform:scale(1.15); box-shadow:0 0 14px currentColor; }
+  
+  .lang-toggle {
+    display:flex; gap:10px;
+  }
+  .lang-btn {
+    flex:1; padding:12px; background:var(--bg3); border:1px solid var(--border);
+    color:var(--text-dim); border-radius:8px; cursor:pointer; font-family:var(--font-sans);
+    font-size:14px; transition:all 0.2s; text-align:center;
+  }
+  .lang-btn.selected { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+  
+  .btn-primary {
+    width:100%; padding:16px; background:var(--accent); color:#000; border:none;
+    font-family:var(--font-mono); font-size:14px; font-weight:700; letter-spacing:0.05em;
+    border-radius:10px; cursor:pointer; transition:all 0.2s;
+    text-transform:uppercase;
+  }
+  .btn-primary:hover { opacity:0.9; transform:translateY(-1px); box-shadow:0 6px 20px var(--accent-glow); }
+  .btn-primary:active { transform:translateY(0); }
+
+  /* ============ HOME ============ */
+  #home { padding-bottom:var(--nav-h); }
+  .home-scroll { flex:1; overflow-y:auto; padding:0 0 16px; }
+  
+  .app-header {
+    padding:16px 20px 12px; display:flex; align-items:center; gap:12px;
+    border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg); z-index:10;
+  }
+  .app-logo { width:32px; height:32px; }
+  .app-name { font-family:var(--font-mono); font-size:15px; font-weight:700; flex:1; }
+  .level-badge {
+    padding:4px 10px; border-radius:20px; font-size:11px;
+    border:1px solid var(--accent); color:var(--accent); font-family:var(--font-mono);
+  }
+  .header-btn {
+    width:36px; height:36px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    color:var(--text); transition:all 0.2s;
+  }
+  .header-btn:hover { border-color:var(--accent); color:var(--accent); }
+  
+  .welcome-card {
+    margin:16px; padding:20px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:14px; position:relative; overflow:hidden;
+  }
+  .welcome-card::before {
+    content:''; position:absolute; top:-40px; right:-40px; width:150px; height:150px;
+    background:var(--accent); opacity:0.05; border-radius:50%; pointer-events:none;
+  }
+  .welcome-name { font-family:var(--font-mono); font-size:20px; margin-bottom:4px; }
+  .welcome-name span { color:var(--accent); }
+  .welcome-sub { color:var(--text-dim); font-size:13px; }
+  
+  .section-title {
+    padding:0 16px; margin-bottom:10px; margin-top:20px;
+    font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim);
+    font-family:var(--font-mono);
+  }
+  
+  .last-session {
+    margin:0 16px 4px; padding:16px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:12px; display:flex; gap:20px; align-items:center;
+  }
+  .last-session-empty { color:var(--text-dim); font-size:13px; }
+  .session-stat { text-align:center; }
+  .session-stat .val { font-family:var(--font-mono); font-size:22px; color:var(--accent); }
+  .session-stat .lbl { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; }
+  
+  .exercise-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 16px;
+  }
+  .exercise-card {
+    background:var(--bg3); border:1px solid var(--border); border-radius:12px;
+    padding:16px 14px; cursor:pointer; transition:all 0.25s; position:relative; overflow:hidden;
+  }
+  .exercise-card::after {
+    content:''; position:absolute; inset:0; background:var(--accent);
+    opacity:0; transition:opacity 0.3s; pointer-events:none;
+  }
+  .exercise-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 8px 24px var(--accent-glow); }
+  .exercise-card:hover::after { opacity:0.04; }
+  .exercise-card:active { transform:scale(0.97); }
+  .ex-icon { font-size:28px; margin-bottom:8px; }
+  .ex-name { font-size:14px; font-weight:600; margin-bottom:4px; }
+  .ex-muscles { font-size:10px; color:var(--text-dim); margin-bottom:8px; }
+  .ex-badge {
+    display:inline-block; padding:2px 8px; border-radius:20px; font-size:10px;
+    font-family:var(--font-mono);
+  }
+  .badge-beginner { background:rgba(0,255,136,0.15); color:#00FF88; border:1px solid rgba(0,255,136,0.3); }
+  .badge-intermediate { background:rgba(0,191,255,0.15); color:#00BFFF; border:1px solid rgba(0,191,255,0.3); }
+  .badge-advanced { background:rgba(255,107,53,0.15); color:#FF6B35; border:1px solid rgba(255,107,53,0.3); }
+  .badge-expert { background:rgba(255,59,59,0.15); color:#FF3B3B; border:1px solid rgba(255,59,59,0.3); }
+
+  /* ============ BOTTOM NAV ============ */
+  .bottom-nav {
+    position:fixed; bottom:0; left:0; right:0; height:var(--nav-h);
+    background:rgba(10,10,10,0.95); backdrop-filter:blur(20px);
+    border-top:1px solid var(--border); display:flex; align-items:stretch; z-index:50;
+  }
+  .nav-item {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; cursor:pointer; color:var(--text-dim); transition:all 0.2s; padding:8px 4px;
+  }
+  .nav-item.active { color:var(--accent); }
+  .nav-item svg { width:22px; height:22px; }
+  .nav-item span { font-size:10px; letter-spacing:0.05em; }
+  .nav-item.active .nav-icon { filter:drop-shadow(0 0 6px var(--accent)); }
+
+  /* ============ TRAINING ============ */
+  #training { z-index:40; background:#000; }
+  
+  .camera-container { 
+    position:relative; width:100%; flex:1; overflow:hidden; background:#000;
+  }
+  #video {
+    width:100%; height:100%; object-fit:cover; display:block;
+    transform: scaleX(-1); /* mirror for front cam */
+  }
+  #canvas {
+    position:absolute; inset:0; width:100%; height:100%; pointer-events:none;
+  }
+  
+  /* Loading overlay */
+  .model-loader {
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; background:rgba(0,0,0,0.85);
+    z-index:10; gap:16px;
+  }
+  .loader-text { font-family:var(--font-mono); font-size:12px; color:var(--text-dim); letter-spacing:0.1em; }
+  .loader-bar { width:200px; height:3px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .loader-fill {
+    height:100%; background:var(--accent); border-radius:3px;
+    animation:loaderAnim 2s ease-in-out infinite;
+    box-shadow:0 0 8px var(--accent-glow);
+  }
+  @keyframes loaderAnim {
+    0%{width:0;margin-left:0} 50%{width:70%;margin-left:30%} 100%{width:0;margin-left:100%}
+  }
+  
+  /* Exercise panel */
+  .ex-panel {
+    position:absolute; bottom:0; left:0; right:0;
+    background:linear-gradient(to top, rgba(0,0,0,0.95) 80%, transparent);
+    padding:20px 20px 24px; z-index:5;
+  }
+  .ex-panel-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .ex-panel-name { font-family:var(--font-mono); font-size:16px; font-weight:700; }
+  .ex-score {
+    font-family:var(--font-mono); font-size:13px;
+    padding:4px 12px; border-radius:20px; border:1px solid var(--accent); color:var(--accent);
+  }
+  
+  .rep-display {
+    text-align:center; margin-bottom:10px;
+  }
+  .rep-count {
+    font-family:var(--font-mono); font-size:72px; font-weight:700; line-height:1;
+    color:var(--accent); text-shadow:0 0 30px var(--accent-glow);
+    transition:transform 0.15s ease;
+  }
+  .rep-count.bump { transform:scale(1.2); }
+  .rep-label { font-size:12px; color:var(--text-dim); letter-spacing:0.1em; text-transform:uppercase; }
+  
+  .phase-indicator {
+    text-align:center; margin-bottom:10px;
+    font-family:var(--font-mono); font-size:12px; color:var(--text-dim); letter-spacing:0.08em;
+  }
+  .phase-pill {
+    display:inline-block; padding:4px 14px; border-radius:20px;
+    background:var(--accent-dim); border:1px solid var(--accent); color:var(--accent);
+  }
+  
+  .correction-msg {
+    text-align:center; font-size:13px; color:#FFB347; margin-bottom:14px; min-height:20px;
+    transition:opacity 0.3s;
+  }
+  .correction-msg.error { color:var(--error); animation:pulse 0.5s ease; }
+  @keyframes pulse { 50%{opacity:0.5} }
+  
+  .ex-controls { display:flex; gap:10px; }
+  .ex-btn {
+    flex:1; padding:12px; border-radius:10px; border:1px solid var(--border);
+    background:rgba(255,255,255,0.05); color:var(--text); cursor:pointer;
+    font-family:var(--font-sans); font-size:13px; font-weight:500; transition:all 0.2s;
+  }
+  .ex-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .ex-btn.danger { border-color:var(--error); color:var(--error); }
+  .ex-btn.danger:hover { background:rgba(255,59,59,0.1); }
+  
+  /* Plank timer */
+  .plank-timer {
+    font-family:var(--font-mono); font-size:52px; font-weight:700;
+    color:var(--accent); text-align:center; line-height:1;
+    text-shadow:0 0 30px var(--accent-glow);
+  }
+  
+  /* Top bar */
+  .training-topbar {
+    position:absolute; top:0; left:0; right:0; z-index:5;
+    padding:14px 16px; display:flex; align-items:center; gap:12px;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+  }
+  .back-btn {
+    width:36px; height:36px; background:rgba(255,255,255,0.1); backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,0.15); border-radius:8px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:white;
+  }
+
+  /* ============ STATS ============ */
+  #stats { padding-bottom:var(--nav-h); }
+  .stats-scroll { flex:1; overflow-y:auto; padding:0 0 16px; }
+  
+  .chart-card {
+    margin:16px; padding:20px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:14px;
+  }
+  .chart-title { font-family:var(--font-mono); font-size:13px; margin-bottom:16px; color:var(--text-dim); letter-spacing:0.05em; }
+  #scoreChart { width:100%; }
+  
+  .sessions-list { margin:0 16px; display:flex; flex-direction:column; gap:8px; }
+  .session-item {
+    padding:14px 16px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:10px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .session-item-left { }
+  .session-ex { font-size:14px; font-weight:500; }
+  .session-date { font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .session-item-right { text-align:right; }
+  .session-reps { font-family:var(--font-mono); font-size:18px; color:var(--accent); }
+  .session-score { font-size:11px; color:var(--text-dim); }
+  
+  .bars-card {
+    margin:16px; padding:20px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:14px;
+  }
+  .bar-row { margin-bottom:12px; }
+  .bar-meta { display:flex; justify-content:space-between; margin-bottom:4px; font-size:12px; color:var(--text-dim); }
+  .bar-track { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .bar-fill { height:100%; background:var(--accent); border-radius:3px; transition:width 0.8s ease; box-shadow:0 0 6px var(--accent-glow); }
+  
+  /* ============ MODALS ============ */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(4px);
+    z-index:200; display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity 0.3s;
+  }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal {
+    background:var(--bg2); border:1px solid var(--border); border-radius:20px 20px 0 0;
+    padding:24px; width:100%; max-width:600px;
+    transform:translateY(20px); transition:transform 0.3s;
+  }
+  .modal-overlay.open .modal { transform:translateY(0); }
+  .modal h2 { font-family:var(--font-mono); font-size:18px; margin-bottom:20px; }
+  .modal p { color:var(--text-dim); font-size:14px; margin-bottom:20px; }
+  
+  .cam-options { display:flex; gap:12px; margin-bottom:20px; }
+  .cam-option {
+    flex:1; padding:20px 12px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:12px; cursor:pointer; text-align:center; transition:all 0.2s;
+  }
+  .cam-option:hover, .cam-option.selected { border-color:var(--accent); background:var(--accent-dim); }
+  .cam-option .icon { font-size:32px; margin-bottom:8px; }
+  .cam-option .name { font-size:13px; }
+
+  /* Settings modal */
+  .settings-section { margin-bottom:24px; }
+  .settings-label { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); margin-bottom:10px; display:block; font-family:var(--font-mono); }
+  .btn-danger {
+    padding:12px 20px; background:rgba(255,59,59,0.1); border:1px solid var(--error);
+    color:var(--error); border-radius:8px; cursor:pointer; font-family:var(--font-sans);
+    font-size:14px; transition:all 0.2s;
+  }
+  .btn-danger:hover { background:rgba(255,59,59,0.2); }
+  .modal-close {
+    position:absolute; top:16px; right:16px; width:32px; height:32px;
+    background:var(--bg3); border:1px solid var(--border); border-radius:50%;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-dim);
+    font-size:18px; line-height:1;
+  }
+  .modal { position:relative; }
+
+  /* ============ DESKTOP LAYOUT ============ */
+  @media (min-width:1024px) {
+    .bottom-nav { display:none; }
+    #home, #stats { padding-bottom:0; padding-left:240px; }
+    
+    .sidebar {
+      position:fixed; left:0; top:0; bottom:0; width:240px;
+      background:var(--bg2); border-right:1px solid var(--border);
+      display:flex; flex-direction:column; padding:24px 0; z-index:30;
+    }
+    .sidebar-logo { padding:0 20px 24px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+    .sidebar-logo .app-name { font-size:17px; }
+    .sidebar-nav { flex:1; }
+    .sidebar-item {
+      display:flex; align-items:center; gap:12px; padding:12px 20px;
+      cursor:pointer; color:var(--text-dim); transition:all 0.2s; font-size:14px;
+    }
+    .sidebar-item:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+    .sidebar-item.active { color:var(--accent); background:var(--accent-dim); border-right:2px solid var(--accent); }
+    .sidebar-item svg { width:20px; height:20px; flex-shrink:0; }
+    
+    #training .camera-container { height:calc(100vh - 0px); }
+    .training-layout { flex-direction:row; }
+    
+    #profile .profile-scroll { max-width:500px; margin:0 auto; }
+  }
+  
+  @media (max-width:1023px) {
+    .sidebar { display:none; }
+  }
+
+  /* Skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg3) 25%, rgba(255,255,255,0.04) 50%, var(--bg3) 75%);
+    background-size:200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius:8px;
+  }
+  @keyframes shimmer { to { background-position:-200% 0; } }
+  
+  /* Rep bump animation */
+  @keyframes repBump {
+    0%{transform:scale(1)} 40%{transform:scale(1.25)} 100%{transform:scale(1)}
+  }
+  .rep-count.bump { animation:repBump 0.3s ease; }
+  
+  /* Toast */
+  .toast {
+    position:fixed; bottom:calc(var(--nav-h) + 16px); left:50%; transform:translateX(-50%);
+    background:var(--bg3); border:1px solid var(--border); border-radius:10px;
+    padding:10px 20px; font-size:13px; z-index:1000; white-space:nowrap;
+    opacity:0; transition:opacity 0.3s; pointer-events:none;
+  }
+  .toast.show { opacity:1; }
+  
+  /* Glow text */
+  .glow { text-shadow:0 0 20px var(--accent-glow); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR (desktop) -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo" style="display:flex;align-items:center;gap:10px">
+    <svg class="app-logo" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="7" r="3" fill="var(--accent)"/>
+      <line x1="16" y1="10" x2="16" y2="20" stroke="var(--accent)" stroke-width="2"/>
+      <line x1="16" y1="13" x2="10" y2="18" stroke="var(--accent)" stroke-width="2"/>
+      <line x1="16" y1="13" x2="22" y2="18" stroke="var(--accent)" stroke-width="2"/>
+      <line x1="16" y1="20" x2="11" y2="28" stroke="var(--accent)" stroke-width="2"/>
+      <line x1="16" y1="20" x2="21" y2="28" stroke="var(--accent)" stroke-width="2"/>
+    </svg>
+    <span class="app-name">FitVision PRO</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-item active" data-nav="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span id="sn-home">Accueil</span>
+    </div>
+    <div class="sidebar-item" data-nav="stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span id="sn-stats">Statistiques</span>
+    </div>
+    <div class="sidebar-item" data-nav="profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="sn-profile">Profil</span>
+    </div>
+  </nav>
+  <div style="padding:16px 20px;">
+    <div class="sidebar-item" onclick="openSettings()" style="border-radius:8px;border:1px solid var(--border)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span id="sn-settings">Paramètres</span>
+    </div>
+  </div>
+</aside>
+
+<!-- SPLASH -->
+<div id="splash" class="view active">
+  <div class="splash-logo">
+    <svg viewBox="0 0 80 80" fill="none">
+      <circle cx="40" cy="14" r="6" fill="var(--accent)" opacity="0.9"/>
+      <line x1="40" y1="20" x2="40" y2="46" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+      <line x1="40" y1="30" x2="24" y2="44" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="40" y1="30" x2="56" y2="44" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="40" y1="46" x2="28" y2="66" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+      <line x1="40" y1="46" x2="52" y2="66" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="40" cy="14" r="6" fill="none" stroke="var(--accent)" stroke-width="1" opacity="0.3">
+        <animate attributeName="r" values="6;14;6" dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+  </div>
+  <div class="splash-title">FitVision PRO</div>
+  <div class="splash-sub" id="splash-sub">AI-Powered Form Coach</div>
+  <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+</div>
+
+<!-- PROFILE -->
+<div id="profile" class="view">
+  <div class="profile-scroll scrollable">
+    <div class="profile-header">
+      <h1 id="ph-title">Créer votre profil</h1>
+      <p id="ph-sub">Personnalisez votre expérience FitVision PRO</p>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label" id="lbl-name">Prénom</label>
+      <input class="form-input" id="input-name" type="text" placeholder="Votre prénom..." maxlength="20">
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label" id="lbl-level">Niveau sportif</label>
+      <div class="level-grid">
+        <div class="level-card" data-level="beginner" onclick="selectLevel(this)">
+          <div class="icon">🌱</div>
+          <div class="name" data-fr="Débutant" data-en="Beginner">Débutant</div>
+          <div class="desc" data-fr="Je commence" data-en="I'm starting">Je commence</div>
+        </div>
+        <div class="level-card" data-level="intermediate" onclick="selectLevel(this)">
+          <div class="icon">⚡</div>
+          <div class="name" data-fr="Intermédiaire" data-en="Intermediate">Intermédiaire</div>
+          <div class="desc" data-fr="6 mois+" data-en="6 months+">6 mois+</div>
+        </div>
+        <div class="level-card" data-level="advanced" onclick="selectLevel(this)">
+          <div class="icon">🔥</div>
+          <div class="name" data-fr="Avancé" data-en="Advanced">Avancé</div>
+          <div class="desc" data-fr="2+ ans" data-en="2+ years">2+ ans</div>
+        </div>
+        <div class="level-card" data-level="expert" onclick="selectLevel(this)">
+          <div class="icon">💎</div>
+          <div class="name" data-fr="Expert" data-en="Expert">Expert</div>
+          <div class="desc" data-fr="Compétiteur" data-en="Competitor">Compétiteur</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label" id="lbl-theme">Thème couleur</label>
+      <div class="theme-grid" id="theme-grid">
+        <div class="theme-dot selected" data-color="#00BFFF" style="background:#00BFFF" onclick="selectTheme(this)" title="Bleu électrique"></div>
+        <div class="theme-dot" data-color="#FF3B3B" style="background:#FF3B3B" onclick="selectTheme(this)" title="Rouge vif"></div>
+        <div class="theme-dot" data-color="#9B5DE5" style="background:#9B5DE5" onclick="selectTheme(this)" title="Violet néon"></div>
+        <div class="theme-dot" data-color="#00FF88" style="background:#00FF88" onclick="selectTheme(this)" title="Vert matrix"></div>
+        <div class="theme-dot" data-color="#FF6B35" style="background:#FF6B35" onclick="selectTheme(this)" title="Orange braise"></div>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">Langue / Language</label>
+      <div class="lang-toggle">
+        <div class="lang-btn selected" data-lang="fr" onclick="selectLang(this)">🇫🇷 Français</div>
+        <div class="lang-btn" data-lang="en" onclick="selectLang(this)">🇬🇧 English</div>
+      </div>
+    </div>
+    
+    <button class="btn-primary" id="btn-start" onclick="saveProfile()">COMMENCER →</button>
+    <div style="height:40px"></div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="home" class="view">
+  <div class="home-scroll scrollable">
+    <header class="app-header">
+      <svg class="app-logo" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="6" r="3" fill="var(--accent)"/>
+        <line x1="16" y1="9" x2="16" y2="19" stroke="var(--accent)" stroke-width="2"/>
+        <line x1="16" y1="13" x2="10" y2="18" stroke="var(--accent)" stroke-width="2"/>
+        <line x1="16" y1="13" x2="22" y2="18" stroke="var(--accent)" stroke-width="2"/>
+        <line x1="16" y1="19" x2="11" y2="27" stroke="var(--accent)" stroke-width="2"/>
+        <line x1="16" y1="19" x2="21" y2="27" stroke="var(--accent)" stroke-width="2"/>
+      </svg>
+      <span class="app-name">FitVision PRO</span>
+      <span class="level-badge mono" id="header-level-badge">DÉBUTANT</span>
+      <button class="header-btn" onclick="openSettings()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </header>
+    
+    <div class="welcome-card">
+      <div class="welcome-name" id="welcome-name">Bienvenue 👋</div>
+      <div class="welcome-sub" id="welcome-sub">Prêt pour votre séance d'aujourd'hui ?</div>
+    </div>
+    
+    <div class="section-title" id="st-last">DERNIÈRE SÉANCE</div>
+    <div id="last-session-container">
+      <div class="last-session"><span class="last-session-empty" id="no-session">Aucune séance enregistrée</span></div>
+    </div>
+    
+    <div class="section-title" id="st-exercises">EXERCICES</div>
+    <div class="exercise-grid" id="exercise-grid"></div>
+    <div style="height:16px"></div>
+  </div>
+</div>
+
+<!-- TRAINING -->
+<div id="training" class="view">
+  <div class="training-topbar">
+    <div class="back-btn" onclick="stopTraining()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </div>
+    <span id="training-title" style="font-family:var(--font-mono);font-size:14px;flex:1">—</span>
+    <span id="training-lang-toggle" style="font-size:12px;color:var(--text-dim);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:6px" onclick="toggleLang()">FR/EN</span>
+  </div>
+  
+  <div class="camera-container" style="flex:1">
+    <video id="video" playsinline autoplay muted></video>
+    <canvas id="canvas"></canvas>
+    <div class="model-loader" id="model-loader">
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="6" r="3" fill="var(--accent)"/>
+        <line x1="16" y1="9" x2="16" y2="19" stroke="var(--accent)" stroke-width="2"/>
+        <line x1="16" y1="13" x2="10" y2="18" stroke="var(--accent)" stroke-width="2"/>
+        <line x1="16" y1="13" x2="22" y2="18" stroke="var(--accent)" stroke-width="2"/>
+        <line x1="16" y1="19" x2="11" y2="27" stroke="var(--accent)" stroke-width="2"/>
+        <line x1="16" y1="19" x2="21" y2="27" stroke="var(--accent)" stroke-width="2"/>
+      </svg>
+      <div class="loader-text" id="loader-text">CHARGEMENT DU MODÈLE IA...</div>
+      <div class="loader-bar"><div class="loader-fill"></div></div>
+    </div>
+  </div>
+  
+  <div class="ex-panel" id="ex-panel">
+    <div class="ex-panel-top">
+      <span class="ex-panel-name" id="panel-ex-name">Squat</span>
+      <span class="ex-score" id="panel-score">100%</span>
+    </div>
+    <div class="rep-display" id="rep-display">
+      <div class="rep-count mono" id="rep-count">0</div>
+      <div class="rep-label" id="rep-label">RÉPÉTITIONS</div>
+    </div>
+    <!-- Plank timer (hidden by default) -->
+    <div id="plank-display" class="hidden">
+      <div class="plank-timer" id="plank-time">0:00</div>
+      <div class="rep-label" id="plank-label">MAINTIEN</div>
+    </div>
+    <div class="phase-indicator">
+      <span class="phase-pill" id="phase-text">—</span>
+    </div>
+    <div class="correction-msg" id="correction-msg"></div>
+    <div class="ex-controls">
+      <button class="ex-btn" id="btn-pause" onclick="togglePause()">⏸ Pause</button>
+      <button class="ex-btn danger" onclick="stopTraining()">■ Terminer</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="stats" class="view">
+  <div class="stats-scroll scrollable">
+    <header class="app-header">
+      <span class="app-name mono" id="stats-title">STATISTIQUES</span>
+    </header>
+    
+    <div class="chart-card">
+      <div class="chart-title mono" id="chart-title">SCORE DE FORME — 10 DERNIÈRES SÉANCES</div>
+      <canvas id="scoreChart" height="160"></canvas>
+    </div>
+    
+    <div class="section-title" id="st-history">HISTORIQUE</div>
+    <div class="sessions-list" id="sessions-list"></div>
+    
+    <div class="section-title" id="st-totals">TOTAL RÉPÉTITIONS</div>
+    <div class="bars-card" id="bars-card"></div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="nav-item active" data-nav="home">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span class="nav-lbl" id="nav-home">Accueil</span>
+  </div>
+  <div class="nav-item" data-nav="training-select">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+    <span class="nav-lbl" id="nav-train">Entraîner</span>
+  </div>
+  <div class="nav-item" data-nav="stats">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span class="nav-lbl" id="nav-stats">Stats</span>
+  </div>
+  <div class="nav-item" data-nav="profile">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span class="nav-lbl" id="nav-profile">Profil</span>
+  </div>
+</nav>
+
+<!-- CAMERA MODAL -->
+<div class="modal-overlay" id="cam-modal">
+  <div class="modal">
+    <div class="modal-close" onclick="closeCamModal()">✕</div>
+    <h2 id="cam-modal-title">Choisir la caméra</h2>
+    <p id="cam-modal-sub">Positionnez-vous de façon à être entièrement visible</p>
+    <div class="cam-options">
+      <div class="cam-option selected" id="opt-front" onclick="selectCamera('front')">
+        <div class="icon">🤳</div>
+        <div class="name" id="cam-front-label">Caméra frontale</div>
+      </div>
+      <div class="cam-option" id="opt-back" onclick="selectCamera('back')">
+        <div class="icon">📸</div>
+        <div class="name" id="cam-back-label">Caméra arrière</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="startTraining()">DÉMARRER →</button>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-close" onclick="closeSettings()">✕</div>
+    <h2 id="settings-title">Paramètres</h2>
+    
+    <div class="settings-section">
+      <span class="settings-label" id="sl-theme">Thème couleur</span>
+      <div class="theme-grid" id="settings-theme-grid">
+        <div class="theme-dot" data-color="#00BFFF" style="background:#00BFFF" onclick="selectTheme(this, true)"></div>
+        <div class="theme-dot" data-color="#FF3B3B" style="background:#FF3B3B" onclick="selectTheme(this, true)"></div>
+        <div class="theme-dot" data-color="#9B5DE5" style="background:#9B5DE5" onclick="selectTheme(this, true)"></div>
+        <div class="theme-dot" data-color="#00FF88" style="background:#00FF88" onclick="selectTheme(this, true)"></div>
+        <div class="theme-dot" data-color="#FF6B35" style="background:#FF6B35" onclick="selectTheme(this, true)"></div>
+      </div>
+    </div>
+    
+    <div class="settings-section">
+      <span class="settings-label">Langue / Language</span>
+      <div class="lang-toggle">
+        <div class="lang-btn" data-lang="fr" onclick="selectLang(this, true)">🇫🇷 Français</div>
+        <div class="lang-btn" data-lang="en" onclick="selectLang(this, true)">🇬🇧 English</div>
+      </div>
+    </div>
+    
+    <div class="settings-section">
+      <span class="settings-label" id="sl-level">Niveau</span>
+      <div class="level-grid">
+        <div class="level-card" data-level="beginner" onclick="selectLevel(this, true)">
+          <div class="icon">🌱</div>
+          <div class="name" data-fr="Débutant" data-en="Beginner">Débutant</div>
+        </div>
+        <div class="level-card" data-level="intermediate" onclick="selectLevel(this, true)">
+          <div class="icon">⚡</div>
+          <div class="name" data-fr="Intermédiaire" data-en="Intermediate">Intermédiaire</div>
+        </div>
+        <div class="level-card" data-level="advanced" onclick="selectLevel(this, true)">
+          <div class="icon">🔥</div>
+          <div class="name" data-fr="Avancé" data-en="Advanced">Avancé</div>
+        </div>
+        <div class="level-card" data-level="expert" onclick="selectLevel(this, true)">
+          <div class="icon">💎</div>
+          <div class="name" data-fr="Expert" data-en="Expert">Expert</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="settings-section" style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn-danger" onclick="resetData()" id="btn-reset">🗑 Réinitialiser les données</button>
+      <div style="font-size:11px;color:var(--text-dim);text-align:center;padding-top:8px">
+        FitVision PRO v2.0 — AI-Powered Form Coach<br>
+        Powered by TensorFlow.js + MoveNet Lightning
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXERCISE SELECT MODAL -->
+<div class="modal-overlay" id="ex-select-modal">
+  <div class="modal">
+    <div class="modal-close" onclick="document.getElementById('ex-select-modal').classList.remove('open')">✕</div>
+    <h2 id="ex-select-title">Choisir un exercice</h2>
+    <div class="exercise-grid" id="modal-exercise-grid" style="margin-top:16px"></div>
+    <div style="height:8px"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const STATE = {
+  profile: null,
+  currentView: 'splash',
+  currentExercise: null,
+  cameraFacing: 'user',
+  reps: 0,
+  formScore: 100,
+  phase: 'up',
+  paused: false,
+  detector: null,
+  stream: null,
+  animFrame: null,
+  frameCount: 0,
+  plankStartTime: null,
+  plankRunning: false,
+  sessionStart: null,
+  peakAngles: {},
+  prevPhase: null,
+  lang: 'fr',
+};
+
+// ============================================================
+// TRANSLATIONS
+// ============================================================
+const T = {
+  fr: {
+    splash_sub: "Coach IA de Forme Sportive",
+    ph_title: "Créer votre profil",
+    ph_sub: "Personnalisez votre expérience FitVision PRO",
+    lbl_name: "Prénom",
+    lbl_level: "Niveau sportif",
+    lbl_theme: "Thème couleur",
+    btn_start: "COMMENCER →",
+    welcome_sub: "Prêt pour votre séance d'aujourd'hui ?",
+    no_session: "Aucune séance enregistrée",
+    st_last: "DERNIÈRE SÉANCE",
+    st_exercises: "EXERCICES",
+    st_history: "HISTORIQUE",
+    st_totals: "TOTAL RÉPÉTITIONS",
+    rep_lbl: "RÉPÉTITIONS",
+    plank_lbl: "MAINTIEN",
+    phase_up: "HAUT",
+    phase_down: "DESCENTE",
+    phase_bottom: "BAS",
+    phase_top: "SOMMET",
+    phase_hold: "MAINTIEN",
+    phase_stand: "DEBOUT",
+    phase_squat_pos: "SQUAT",
+    phase_plank_pos: "PLANCHE",
+    phase_pushup_down: "BAS",
+    phase_jump: "SAUT",
+    btn_pause: "⏸ Pause",
+    btn_resume: "▶ Reprendre",
+    btn_stop: "■ Terminer",
+    loading_model: "CHARGEMENT DU MODÈLE IA...",
+    cam_title: "Choisir la caméra",
+    cam_sub: "Positionnez-vous de façon à être entièrement visible",
+    cam_front: "Caméra frontale",
+    cam_back: "Caméra arrière",
+    start_btn: "DÉMARRER →",
+    settings_title: "Paramètres",
+    sl_theme: "Thème couleur",
+    sl_level: "Niveau",
+    btn_reset: "🗑 Réinitialiser les données",
+    stats_title: "STATISTIQUES",
+    chart_title: "SCORE DE FORME — 10 DERNIÈRES SÉANCES",
+    nav_home: "Accueil",
+    nav_train: "Entraîner",
+    nav_stats: "Stats",
+    nav_profile: "Profil",
+    sn_home: "Accueil",
+    sn_stats: "Statistiques",
+    sn_profile: "Profil",
+    sn_settings: "Paramètres",
+    session_saved: "Séance enregistrée !",
+    // Corrections
+    c_knees_forward: "Genoux trop en avant",
+    c_back_round: "Dos arrondi — gainez !",
+    c_knees_valgus: "Genoux qui rentrent (valgus)",
+    c_depth: "Montez plus haut",
+    c_hips_high: "Hanches trop hautes",
+    c_hips_low: "Hanches trop basses",
+    c_head_down: "Regardez devant vous",
+    c_back_arch: "Évitez la cambrure lombaire",
+    c_elbows_wide: "Coudes trop écartés",
+    c_amplitude: "Amplitude insuffisante",
+    c_torso_lean: "Torse trop penché",
+    c_heel: "Talon décollé",
+    c_good: "✓ Bonne forme !",
+    ex_select_title: "Choisir un exercice",
+    level_beginner: "Débutant",
+    level_intermediate: "Intermédiaire",
+    level_advanced: "Avancé",
+    level_expert: "Expert",
+  },
+  en: {
+    splash_sub: "AI-Powered Form Coach",
+    ph_title: "Create your profile",
+    ph_sub: "Personalize your FitVision PRO experience",
+    lbl_name: "First name",
+    lbl_level: "Fitness level",
+    lbl_theme: "Color theme",
+    btn_start: "LET'S GO →",
+    welcome_sub: "Ready for today's session?",
+    no_session: "No session recorded yet",
+    st_last: "LAST SESSION",
+    st_exercises: "EXERCISES",
+    st_history: "HISTORY",
+    st_totals: "TOTAL REPS",
+    rep_lbl: "REPS",
+    plank_lbl: "HOLD TIME",
+    phase_up: "TOP",
+    phase_down: "DOWN",
+    phase_bottom: "BOTTOM",
+    phase_top: "TOP",
+    phase_hold: "HOLD",
+    phase_stand: "STANDING",
+    phase_squat_pos: "SQUAT",
+    phase_plank_pos: "PLANK",
+    phase_pushup_down: "BOTTOM",
+    phase_jump: "JUMP",
+    btn_pause: "⏸ Pause",
+    btn_resume: "▶ Resume",
+    btn_stop: "■ Stop",
+    loading_model: "LOADING AI MODEL...",
+    cam_title: "Choose camera",
+    cam_sub: "Position yourself to be fully visible",
+    cam_front: "Front camera",
+    cam_back: "Rear camera",
+    start_btn: "START →",
+    settings_title: "Settings",
+    sl_theme: "Color theme",
+    sl_level: "Level",
+    btn_reset: "🗑 Reset data",
+    stats_title: "STATISTICS",
+    chart_title: "FORM SCORE — LAST 10 SESSIONS",
+    nav_home: "Home",
+    nav_train: "Train",
+    nav_stats: "Stats",
+    nav_profile: "Profile",
+    sn_home: "Home",
+    sn_stats: "Statistics",
+    sn_profile: "Profile",
+    sn_settings: "Settings",
+    session_saved: "Session saved!",
+    c_knees_forward: "Knees too far forward",
+    c_back_round: "Back rounded — brace core!",
+    c_knees_valgus: "Knees caving in (valgus)",
+    c_depth: "Not deep enough",
+    c_hips_high: "Hips too high",
+    c_hips_low: "Hips too low",
+    c_head_down: "Look forward",
+    c_back_arch: "Avoid lumbar arch",
+    c_elbows_wide: "Elbows too wide",
+    c_amplitude: "Insufficient range of motion",
+    c_torso_lean: "Torso leaning too much",
+    c_heel: "Heel lifting",
+    c_good: "✓ Good form!",
+    ex_select_title: "Choose exercise",
+    level_beginner: "Beginner",
+    level_intermediate: "Intermediate",
+    level_advanced: "Advanced",
+    level_expert: "Expert",
+  }
+};
+function t(key) { return (T[STATE.lang] || T.fr)[key] || key; }
+
+// ============================================================
+// EXERCISES DATA
+// ============================================================
+const EXERCISES = [
+  { id:'squat', icon:'🏋️', muscles_fr:'Quadriceps, Fessiers', muscles_en:'Quads, Glutes', difficulty:'beginner', type:'rep' },
+  { id:'goblet_squat', icon:'🥤', muscles_fr:'Quadriceps, Core', muscles_en:'Quads, Core', difficulty:'intermediate', type:'rep' },
+  { id:'pushup', icon:'💪', muscles_fr:'Pectoraux, Triceps', muscles_en:'Chest, Triceps', difficulty:'beginner', type:'rep' },
+  { id:'ohp', icon:'🏆', muscles_fr:'Épaules, Triceps', muscles_en:'Shoulders, Triceps', difficulty:'intermediate', type:'rep' },
+  { id:'lunge', icon:'🦵', muscles_fr:'Quadriceps, Ischio', muscles_en:'Quads, Hamstrings', difficulty:'intermediate', type:'rep' },
+  { id:'plank', icon:'⚡', muscles_fr:'Core, Stabilisateurs', muscles_en:'Core, Stabilizers', difficulty:'beginner', type:'time' },
+  { id:'rdl', icon:'🏗️', muscles_fr:'Ischio, Fessiers, Dos', muscles_en:'Hamstrings, Glutes, Back', difficulty:'advanced', type:'rep' },
+  { id:'burpee', icon:'🌪️', muscles_fr:'Full body', muscles_en:'Full body', difficulty:'advanced', type:'rep' },
+];
+
+function getExName(id) {
+  const names = {
+    squat: {fr:'Squat', en:'Squat'},
+    goblet_squat: {fr:'Goblet Squat', en:'Goblet Squat'},
+    pushup: {fr:'Pompes', en:'Push-up'},
+    ohp: {fr:'Développé militaire', en:'Overhead Press'},
+    lunge: {fr:'Fente avant', en:'Lunge'},
+    plank: {fr:'Planche', en:'Plank'},
+    rdl: {fr:'Hip Hinge / RDL', en:'Hip Hinge / RDL'},
+    burpee: {fr:'Burpee', en:'Burpee'},
+  };
+  return (names[id] || {fr:id,en:id})[STATE.lang] || id;
+}
+
+// ============================================================
+// ACCENT / THEME
+// ============================================================
+function applyAccent(color) {
+  const r = parseInt(color.slice(1,3),16);
+  const g = parseInt(color.slice(3,5),16);
+  const b = parseInt(color.slice(5,7),16);
+  document.documentElement.style.setProperty('--accent', color);
+  document.documentElement.style.setProperty('--accent-dim', `rgba(${r},${g},${b},0.12)`);
+  document.documentElement.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.4)`);
+}
+
+function selectTheme(el, fromSettings=false) {
+  const color = el.dataset.color;
+  // Update all theme grids
+  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('selected'));
+  document.querySelectorAll(`.theme-dot[data-color="${color}"]`).forEach(d => d.classList.add('selected'));
+  applyAccent(color);
+  if (STATE.profile) {
+    STATE.profile.accent = color;
+    saveProfileToStorage();
+  }
+}
+
+// ============================================================
+// LANGUAGE
+// ============================================================
+function selectLang(el, fromSettings=false) {
+  const lang = el.dataset.lang;
+  STATE.lang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll(`.lang-btn[data-lang="${lang}"]`).forEach(b => b.classList.add('selected'));
+  if (STATE.profile) {
+    STATE.profile.lang = lang;
+    saveProfileToStorage();
+  }
+  applyTranslations();
+  if (fromSettings) renderHome();
+}
+
+function toggleLang() {
+  STATE.lang = STATE.lang === 'fr' ? 'en' : 'fr';
+  if (STATE.profile) { STATE.profile.lang = STATE.lang; saveProfileToStorage(); }
+  applyTranslations();
+}
+
+function applyTranslations() {
+  const ids = ['splash-sub','ph-title','ph-sub','lbl-name','lbl-level','lbl-theme',
+    'btn-start','welcome-sub','no-session','st-last','st-exercises','st-history',
+    'st-totals','rep-label','plank-label','loader-text','cam-modal-title','cam-modal-sub',
+    'cam-front-label','cam-back-label','settings-title','sl-theme','sl-level','btn-reset',
+    'stats-title','chart-title','nav-home','nav-train','nav-stats','nav-profile',
+    'sn-home','sn-stats','sn-profile','sn-settings','ex-select-title'];
+  const map = {
+    'splash-sub':'splash_sub','ph-title':'ph_title','ph-sub':'ph_sub','lbl-name':'lbl_name',
+    'lbl-level':'lbl_level','lbl-theme':'lbl_theme','btn-start':'btn_start',
+    'welcome-sub':'welcome_sub','no-session':'no_session','st-last':'st_last',
+    'st-exercises':'st_exercises','st-history':'st_history','st-totals':'st_totals',
+    'rep-label':'rep_lbl','plank-label':'plank_lbl','loader-text':'loading_model',
+    'cam-modal-title':'cam_title','cam-modal-sub':'cam_sub','cam-front-label':'cam_front',
+    'cam-back-label':'cam_back','settings-title':'settings_title','sl-theme':'sl_theme',
+    'sl-level':'sl_level','btn-reset':'btn_reset','stats-title':'stats_title',
+    'chart-title':'chart_title','nav-home':'nav_home','nav-train':'nav_train',
+    'nav-stats':'nav_stats','nav-profile':'nav_profile','sn-home':'sn_home',
+    'sn-stats':'sn_stats','sn-profile':'sn_profile','sn-settings':'sn_settings',
+    'ex-select-title':'ex_select_title',
+  };
+  for (const [id, key] of Object.entries(map)) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t(key);
+  }
+  // Level cards text
+  document.querySelectorAll('.level-card .name').forEach(el => {
+    el.textContent = STATE.lang === 'en' ? el.dataset.en : el.dataset.fr;
+  });
+  document.querySelectorAll('.level-card .desc').forEach(el => {
+    if (el.dataset.fr) el.textContent = STATE.lang === 'en' ? el.dataset.en : el.dataset.fr;
+  });
+}
+
+// ============================================================
+// LEVEL
+// ============================================================
+function selectLevel(el, fromSettings=false) {
+  const level = el.dataset.level;
+  const container = el.closest('.level-grid') || el.parentNode;
+  container.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  if (STATE.profile) {
+    STATE.profile.level = level;
+    saveProfileToStorage();
+    renderHome();
+  } else {
+    // on profile screen
+  }
+}
+
+// ============================================================
+// PROFILE MANAGEMENT
+// ============================================================
+function saveProfileToStorage() {
+  localStorage.setItem('fitvision_profile', JSON.stringify(STATE.profile));
+}
+
+function loadProfile() {
+  const raw = localStorage.getItem('fitvision_profile');
+  return raw ? JSON.parse(raw) : null;
+}
+
+function saveProfile() {
+  const name = document.getElementById('input-name').value.trim() || 'Athlète';
+  const levelEl = document.querySelector('#profile .level-card.selected');
+  const level = levelEl ? levelEl.dataset.level : 'beginner';
+  const accentEl = document.querySelector('#profile .theme-dot.selected');
+  const accent = accentEl ? accentEl.dataset.color : '#00BFFF';
+  const langEl = document.querySelector('#profile .lang-btn.selected');
+  const lang = langEl ? langEl.dataset.lang : 'fr';
+  
+  STATE.profile = { name, level, accent, lang };
+  STATE.lang = lang;
+  saveProfileToStorage();
+  applyAccent(accent);
+  applyTranslations();
+  renderHome();
+  navigateTo('home');
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navigateTo(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = document.getElementById(view);
+  if (el) el.classList.add('active');
+  STATE.currentView = view;
+  
+  // Bottom nav
+  document.querySelectorAll('.nav-item, .sidebar-item').forEach(i => i.classList.remove('active'));
+  document.querySelectorAll(`[data-nav="${view}"]`).forEach(i => i.classList.add('active'));
+  
+  if (view === 'stats') renderStats();
+}
+
+// Bottom nav click
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const nav = item.dataset.nav;
+    if (nav === 'training-select') {
+      openExSelectModal();
+    } else {
+      navigateTo(nav);
+    }
+  });
+});
+
+document.querySelectorAll('.sidebar-item[data-nav]').forEach(item => {
+  item.addEventListener('click', () => {
+    const nav = item.dataset.nav;
+    navigateTo(nav);
+  });
+});
+
+// ============================================================
+// HOME RENDER
+// ============================================================
+function renderHome() {
+  if (!STATE.profile) return;
+  const p = STATE.profile;
+  
+  // Welcome
+  document.getElementById('welcome-name').innerHTML = `${t('nav_home') === 'Home' ? 'Welcome' : 'Bienvenue'}, <span>${p.name}</span> 👋`;
+  document.getElementById('welcome-sub').textContent = t('welcome_sub');
+  
+  // Level badge
+  const lvlMap = {beginner:'DÉBUTANT',intermediate:'INTERMÉDIAIRE',advanced:'AVANCÉ',expert:'EXPERT'};
+  const lvlMapEn = {beginner:'BEGINNER',intermediate:'INTERMEDIATE',advanced:'ADVANCED',expert:'EXPERT'};
+  const badge = STATE.lang === 'en' ? lvlMapEn[p.level] : lvlMap[p.level];
+  document.getElementById('header-level-badge').textContent = badge;
+  
+  // Last session
+  renderLastSession();
+  
+  // Exercise grid
+  renderExerciseGrid('exercise-grid');
+}
+
+function renderLastSession() {
+  const sessions = getSessions();
+  const container = document.getElementById('last-session-container');
+  if (!sessions.length) {
+    container.innerHTML = `<div class="last-session"><span class="last-session-empty">${t('no_session')}</span></div>`;
+    return;
+  }
+  const last = sessions[sessions.length - 1];
+  const date = new Date(last.date).toLocaleDateString(STATE.lang === 'fr' ? 'fr-FR' : 'en-US', {day:'numeric',month:'short'});
+  container.innerHTML = `<div class="last-session">
+    <div class="session-stat"><div class="val">${last.reps || '—'}</div><div class="lbl">${t('rep_lbl')}</div></div>
+    <div class="session-stat"><div class="val">${last.score}%</div><div class="lbl">SCORE</div></div>
+    <div class="session-stat"><div class="val">${date}</div><div class="lbl">${getExName(last.exercise).substring(0,6).toUpperCase()}</div></div>
+  </div>`;
+}
+
+function renderExerciseGrid(containerId, onclick_prefix='openExercise') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const level = STATE.profile ? STATE.profile.level : 'beginner';
+  
+  container.innerHTML = EXERCISES.map(ex => {
+    const name = getExName(ex.id);
+    const muscles = STATE.lang === 'en' ? ex.muscles_en : ex.muscles_fr;
+    const diff = ex.difficulty;
+    return `<div class="exercise-card" onclick="${onclick_prefix}('${ex.id}')">
+      <div class="ex-icon">${ex.icon}</div>
+      <div class="ex-name">${name}</div>
+      <div class="ex-muscles">${muscles}</div>
+      <span class="ex-badge badge-${diff}">${diff === 'beginner' ? (STATE.lang==='en'?'Beginner':'Débutant') : diff === 'intermediate' ? (STATE.lang==='en'?'Intermediate':'Intermédiaire') : diff === 'advanced' ? (STATE.lang==='en'?'Advanced':'Avancé') : (STATE.lang==='en'?'Expert':'Expert')}</span>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// EXERCISE SELECT MODAL
+// ============================================================
+function openExSelectModal() {
+  renderExerciseGrid('modal-exercise-grid', 'openExercise');
+  document.getElementById('ex-select-modal').classList.add('open');
+}
+
+function openExercise(id) {
+  document.getElementById('ex-select-modal').classList.remove('open');
+  STATE.currentExercise = EXERCISES.find(e => e.id === id);
+  document.getElementById('cam-modal').classList.add('open');
+}
+
+function closeCamModal() {
+  document.getElementById('cam-modal').classList.remove('open');
+}
+
+function selectCamera(facing) {
+  STATE.cameraFacing = facing === 'front' ? 'user' : 'environment';
+  document.getElementById('opt-front').classList.toggle('selected', facing === 'front');
+  document.getElementById('opt-back').classList.toggle('selected', facing === 'back');
+  const video = document.getElementById('video');
+  video.style.transform = facing === 'front' ? 'scaleX(-1)' : 'none';
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function openSettings() {
+  // Sync settings modal state
+  if (STATE.profile) {
+    // Select current theme
+    document.querySelectorAll('#settings-theme-grid .theme-dot').forEach(d => {
+      d.classList.toggle('selected', d.dataset.color === STATE.profile.accent);
+    });
+    // Select current level
+    document.querySelectorAll('#settings-modal .level-card').forEach(c => {
+      c.classList.toggle('selected', c.dataset.level === STATE.profile.level);
+    });
+    // Select current lang
+    document.querySelectorAll('#settings-modal .lang-btn').forEach(b => {
+      b.classList.toggle('selected', b.dataset.lang === STATE.lang);
+    });
+  }
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+function resetData() {
+  if (confirm(STATE.lang === 'fr' ? 'Réinitialiser toutes les données ?' : 'Reset all data?')) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+// ============================================================
+// SESSIONS STORAGE
+// ============================================================
+function getSessions() {
+  try { return JSON.parse(localStorage.getItem('fitvision_sessions') || '[]'); } catch { return []; }
+}
+function addSession(session) {
+  const sessions = getSessions();
+  sessions.push(session);
+  localStorage.setItem('fitvision_sessions', JSON.stringify(sessions.slice(-50)));
+}
+
+// ============================================================
+// TRAINING
+// ============================================================
+let detector = null;
+let modelLoaded = false;
+
+async function startTraining() {
+  closeCamModal();
+  const ex = STATE.currentExercise;
+  if (!ex) return;
+  
+  // Reset state
+  STATE.reps = 0;
+  STATE.formScore = 100;
+  STATE.phase = 'up';
+  STATE.prevPhase = null;
+  STATE.paused = false;
+  STATE.frameCount = 0;
+  STATE.sessionStart = Date.now();
+  STATE.plankStartTime = null;
+  STATE.plankRunning = false;
+  
+  // UI
+  document.getElementById('training-title').textContent = getExName(ex.id);
+  document.getElementById('rep-count').textContent = '0';
+  document.getElementById('panel-score').textContent = '100%';
+  document.getElementById('correction-msg').textContent = '';
+  document.getElementById('phase-text').textContent = '—';
+  document.getElementById('btn-pause').textContent = t('btn_pause');
+  
+  const isPlank = ex.type === 'time';
+  document.getElementById('rep-display').classList.toggle('hidden', isPlank);
+  document.getElementById('plank-display').classList.toggle('hidden', !isPlank);
+  
+  navigateTo('training');
+  
+  // Camera
+  try {
+    if (STATE.stream) { STATE.stream.getTracks().forEach(t => t.stop()); }
+    const constraints = { video: { facingMode: STATE.cameraFacing, width:{ideal:1280}, height:{ideal:720} }, audio:false };
+    STATE.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = document.getElementById('video');
+    video.srcObject = STATE.stream;
+    await new Promise(r => video.onloadedmetadata = r);
+    video.play();
+  } catch(e) {
+    showToast(STATE.lang==='fr' ? '⚠ Caméra inaccessible' : '⚠ Camera unavailable');
+    return;
+  }
+  
+  // Load model
+  document.getElementById('model-loader').style.display = 'flex';
+  document.getElementById('loader-text').textContent = t('loading_model');
+  
+  try {
+    if (!modelLoaded) {
+      // Load TF.js and MoveNet from CDN dynamically
+      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js');
+      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js');
+      modelLoaded = true;
+    }
+    
+    if (!detector) {
+      detector = await poseDetection.createDetector(
+        poseDetection.SupportedModels.MoveNet,
+        { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+      );
+    }
+  } catch(e) {
+    console.error('Model loading failed:', e);
+    showToast(STATE.lang==='fr' ? '⚠ Modèle IA non disponible' : '⚠ AI model unavailable');
+    // Run in demo mode without pose detection
+    detector = null;
+  }
+  
+  document.getElementById('model-loader').style.display = 'none';
+  
+  // Start detection loop
+  if (STATE.animFrame) cancelAnimationFrame(STATE.animFrame);
+  detectionLoop();
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function detectionLoop() {
+  if (STATE.currentView !== 'training') return;
+  
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  
+  // Resize canvas to match video
+  if (video.readyState >= 2) {
+    canvas.width = video.videoWidth || video.clientWidth;
+    canvas.height = video.videoHeight || video.clientHeight;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+  }
+  
+  STATE.frameCount++;
+  const skip = STATE.frameCount % 2 !== 0; // Every 2 frames
+  
+  if (!STATE.paused && !skip && detector && video.readyState >= 2) {
+    try {
+      const poses = await detector.estimatePoses(video);
+      if (poses && poses.length > 0) {
+        const kps = poses[0].keypoints;
+        drawSkeleton(canvas, kps);
+        if (!STATE.paused) analyzePose(kps);
+      }
+    } catch(e) { /* silent */ }
+  } else if (!detector || skip) {
+    // Just draw last known state or demo
+    drawDemoSkeleton(canvas);
+  }
+  
+  // Plank timer
+  if (STATE.currentExercise?.type === 'time' && STATE.plankRunning && !STATE.paused) {
+    const elapsed = Math.floor((Date.now() - STATE.plankStartTime) / 1000);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    document.getElementById('plank-time').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }
+  
+  STATE.animFrame = requestAnimationFrame(detectionLoop);
+}
+
+function drawDemoSkeleton(canvas) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+function drawSkeleton(canvas, keypoints) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  
+  // Connections
+  const connections = [
+    [5,6],[5,7],[7,9],[6,8],[8,10],
+    [5,11],[6,12],[11,12],
+    [11,13],[13,15],[12,14],[14,16],
+    [0,1],[0,2],[1,3],[2,4],
+  ];
+  
+  ctx.lineWidth = 2.5;
+  connections.forEach(([a,b]) => {
+    const kpA = keypoints[a];
+    const kpB = keypoints[b];
+    if (!kpA || !kpB || kpA.score < 0.3 || kpB.score < 0.3) return;
+    
+    const grad = ctx.createLinearGradient(kpA.x, kpA.y, kpB.x, kpB.y);
+    grad.addColorStop(0, accent + 'CC');
+    grad.addColorStop(1, accent + '88');
+    ctx.strokeStyle = grad;
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(kpA.x, kpA.y);
+    ctx.lineTo(kpB.x, kpB.y);
+    ctx.stroke();
+  });
+  
+  // Points
+  keypoints.forEach(kp => {
+    if (!kp || kp.score < 0.3) return;
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.arc(kp.x, kp.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(kp.x, kp.y, 2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.shadowBlur = 0;
+}
+
+// ============================================================
+// ANGLE CALCULATION
+// ============================================================
+function angle(A, B, C) {
+  const radians = Math.atan2(C.y - B.y, C.x - B.x) - Math.atan2(A.y - B.y, A.x - B.x);
+  let deg = Math.abs(radians * 180 / Math.PI);
+  if (deg > 180) deg = 360 - deg;
+  return deg;
+}
+
+function midpoint(A, B) {
+  return { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
+}
+
+function visible(kp, threshold=0.35) {
+  return kp && kp.score > threshold;
+}
+
+// ============================================================
+// POSE ANALYSIS
+// ============================================================
+function analyzePose(kps) {
+  const ex = STATE.currentExercise;
+  if (!ex) return;
+  
+  // MoveNet keypoint indices:
+  // 0:nose, 1:left_eye, 2:right_eye, 3:left_ear, 4:right_ear
+  // 5:left_shoulder, 6:right_shoulder, 7:left_elbow, 8:right_elbow
+  // 9:left_wrist, 10:right_wrist, 11:left_hip, 12:right_hip
+  // 13:left_knee, 14:right_knee, 15:left_ankle, 16:right_ankle
+  
+  switch(ex.id) {
+    case 'squat':
+    case 'goblet_squat':
+      analyzeSquat(kps);
+      break;
+    case 'pushup':
+      analyzePushup(kps);
+      break;
+    case 'ohp':
+      analyzeOHP(kps);
+      break;
+    case 'lunge':
+      analyzeLunge(kps);
+      break;
+    case 'plank':
+      analyzePlank(kps);
+      break;
+    case 'rdl':
+      analyzeRDL(kps);
+      break;
+    case 'burpee':
+      analyzeBurpee(kps);
+      break;
+  }
+}
+
+function analyzeSquat(kps) {
+  const lShoulder = kps[5], lHip = kps[11], lKnee = kps[13], lAnkle = kps[15];
+  const rShoulder = kps[6], rHip = kps[12], rKnee = kps[14], rAnkle = kps[16];
+  
+  // Use the side with better visibility
+  const useLeft = visible(lKnee) && visible(lHip) && visible(lAnkle);
+  const useRight = visible(rKnee) && visible(rHip) && visible(rAnkle);
+  
+  if (!useLeft && !useRight) return;
+  
+  const knee = useLeft ? lKnee : rKnee;
+  const hip = useLeft ? lHip : rHip;
+  const ankle = useLeft ? lAnkle : rAnkle;
+  const shoulder = useLeft ? lShoulder : rShoulder;
+  
+  const kneeAngle = angle(hip, knee, ankle);
+  const corrections = [];
+  let score = 100;
+  
+  // Phase detection
+  let phase;
+  if (kneeAngle < 80) phase = 'bottom';
+  else if (kneeAngle < 100) phase = 'down';
+  else if (kneeAngle > 150) phase = 'up';
+  else phase = 'mid';
+  
+  // Rep counting: up → down → up
+  if (STATE.prevPhase === 'bottom' && phase === 'up') {
+    countRep();
+  }
+  STATE.prevPhase = phase !== 'mid' ? phase : STATE.prevPhase;
+  
+  // Corrections
+  if (visible(shoulder) && visible(hip)) {
+    const torsoAngle = Math.abs(Math.atan2(shoulder.x - hip.x, shoulder.y - hip.y) * 180 / Math.PI);
+    if (torsoAngle > 50) { corrections.push(t('c_back_round')); score -= 20; }
+  }
+  
+  if (visible(ankle) && knee.x && ankle.x) {
+    const kneeAhead = Math.abs(knee.x - ankle.x);
+    const scale = Math.abs(hip.y - ankle.y);
+    if (kneeAhead > scale * 0.4) { corrections.push(t('c_knees_forward')); score -= 15; }
+  }
+  
+  // Valgus: compare left and right knees
+  if (visible(lKnee) && visible(rKnee) && visible(lAnkle) && visible(rAnkle)) {
+    const kneeWidth = Math.abs(lKnee.x - rKnee.x);
+    const ankleWidth = Math.abs(lAnkle.x - rAnkle.x);
+    if (kneeWidth < ankleWidth * 0.7 && phase !== 'up') { corrections.push(t('c_knees_valgus')); score -= 20; }
+  }
+  
+  const phaseLabel = phase === 'bottom' ? t('phase_bottom') : phase === 'down' ? t('phase_down') : phase === 'up' ? t('phase_up') : '·';
+  updatePanel(score, corrections[0] || t('c_good'), phaseLabel);
+}
+
+function analyzePushup(kps) {
+  const lShoulder = kps[5], lElbow = kps[7], lWrist = kps[9];
+  const rShoulder = kps[6], rElbow = kps[8], rWrist = kps[10];
+  const lHip = kps[11], rHip = kps[12], lAnkle = kps[15], rAnkle = kps[16];
+  
+  const useLeft = visible(lElbow) && visible(lShoulder) && visible(lWrist);
+  const sh = useLeft ? lShoulder : rShoulder;
+  const el = useLeft ? lElbow : rElbow;
+  const wr = useLeft ? lWrist : rWrist;
+  
+  if (!visible(el)) return;
+  
+  const elbowAngle = angle(sh, el, wr);
+  
+  let phase;
+  if (elbowAngle < 90) phase = 'bottom';
+  else if (elbowAngle > 160) phase = 'up';
+  else phase = 'mid';
+  
+  if (STATE.prevPhase === 'bottom' && phase === 'up') countRep();
+  STATE.prevPhase = phase !== 'mid' ? phase : STATE.prevPhase;
+  
+  const corrections = [];
+  let score = 100;
+  
+  // Body alignment
+  if (visible(lHip) && visible(lAnkle) && visible(lShoulder)) {
+    const bodyAngle = angle(sh, {x:(lHip.x+rHip.x)/2, y:(lHip.y+rHip.y)/2}, {x:(lAnkle.x+rAnkle.x)/2, y:(lAnkle.y+rAnkle.y)/2});
+    if (bodyAngle < 160) { corrections.push(t('c_hips_high')); score -= 20; }
+    else if (bodyAngle > 195) { corrections.push(t('c_hips_low')); score -= 20; }
+  }
+  
+  const phaseLabel = phase === 'bottom' ? t('phase_pushup_down') : phase === 'up' ? t('phase_up') : '·';
+  updatePanel(score, corrections[0] || t('c_good'), phaseLabel);
+}
+
+function analyzeOHP(kps) {
+  const lShoulder = kps[5], lElbow = kps[7], lWrist = kps[9];
+  const rShoulder = kps[6], rElbow = kps[8], rWrist = kps[10];
+  const lHip = kps[11], rHip = kps[12];
+  
+  const useLeft = visible(lElbow) && visible(lShoulder) && visible(lWrist);
+  const sh = useLeft ? lShoulder : rShoulder;
+  const el = useLeft ? lElbow : rElbow;
+  const wr = useLeft ? lWrist : rWrist;
+  const hip = useLeft ? lHip : rHip;
+  
+  if (!visible(el)) return;
+  
+  const elbowAngle = angle(sh, el, wr);
+  
+  let phase;
+  if (wr.y > sh.y) phase = 'bottom'; // wrist below shoulder = starting pos
+  else if (elbowAngle > 160) phase = 'up';
+  else phase = 'mid';
+  
+  if (STATE.prevPhase === 'bottom' && phase === 'up') countRep();
+  STATE.prevPhase = phase !== 'mid' ? phase : STATE.prevPhase;
+  
+  let score = 100;
+  const corrections = [];
+  
+  if (visible(sh) && visible(hip)) {
+    const lean = Math.abs(sh.x - hip.x);
+    const height = Math.abs(sh.y - hip.y);
+    if (lean > height * 0.3) { corrections.push(t('c_back_arch')); score -= 20; }
+  }
+  
+  const phaseLabel = phase === 'up' ? t('phase_up') : phase === 'bottom' ? t('phase_down') : '·';
+  updatePanel(score, corrections[0] || t('c_good'), phaseLabel);
+}
+
+function analyzeLunge(kps) {
+  const lHip = kps[11], lKnee = kps[13], lAnkle = kps[15];
+  const rHip = kps[12], rKnee = kps[14], rAnkle = kps[16];
+  const lShoulder = kps[5], rShoulder = kps[6];
+  
+  const bothVisible = visible(lKnee) && visible(rKnee) && visible(lHip) && visible(rHip);
+  if (!bothVisible) return;
+  
+  const frontKnee = lKnee.y > rKnee.y ? lKnee : rKnee;
+  const frontAnkle = lKnee.y > rKnee.y ? lAnkle : rAnkle;
+  const frontHip = lKnee.y > rKnee.y ? lHip : rHip;
+  const rearKnee = lKnee.y > rKnee.y ? rKnee : lKnee;
+  
+  const frontAngle = angle(frontHip, frontKnee, frontAnkle);
+  
+  let phase;
+  if (frontAngle < 100) phase = 'bottom';
+  else if (frontAngle > 160) phase = 'up';
+  else phase = 'mid';
+  
+  if (STATE.prevPhase === 'bottom' && phase === 'up') countRep();
+  STATE.prevPhase = phase !== 'mid' ? phase : STATE.prevPhase;
+  
+  const corrections = [];
+  let score = 100;
+  
+  if (visible(frontAnkle) && frontKnee.x) {
+    if (Math.abs(frontKnee.x - frontAnkle.x) > 30) { corrections.push(t('c_knees_forward')); score -= 20; }
+  }
+  
+  const phaseLabel = phase === 'bottom' ? t('phase_bottom') : phase === 'up' ? t('phase_up') : '·';
+  updatePanel(score, corrections[0] || t('c_good'), phaseLabel);
+}
+
+function analyzePlank(kps) {
+  const lShoulder = kps[5], lHip = kps[11], lAnkle = kps[15];
+  const rShoulder = kps[6], rHip = kps[12], rAnkle = kps[16];
+  
+  const useLeft = visible(lShoulder) && visible(lHip) && visible(lAnkle);
+  const sh = useLeft ? lShoulder : rShoulder;
+  const hip = useLeft ? lHip : rHip;
+  const ankle = useLeft ? lAnkle : rAnkle;
+  
+  if (!visible(sh) || !visible(hip)) return;
+  
+  const bodyAngle = angle(sh, hip, ankle);
+  
+  const corrections = [];
+  let score = 100;
+  
+  if (bodyAngle < 155) { corrections.push(t('c_hips_high')); score -= 25; }
+  else if (bodyAngle > 195) { corrections.push(t('c_hips_low')); score -= 25; }
+  
+  // Start/stop timer based on position
+  const inPosition = bodyAngle > 145 && bodyAngle < 210;
+  
+  if (inPosition && !STATE.plankRunning) {
+    STATE.plankRunning = true;
+    STATE.plankStartTime = Date.now();
+  } else if (!inPosition && STATE.plankRunning) {
+    STATE.plankRunning = false;
+  }
+  
+  updatePanel(score, corrections[0] || t('c_good'), t('phase_hold'));
+}
+
+function analyzeRDL(kps) {
+  const lShoulder = kps[5], lHip = kps[11], lKnee = kps[13], lAnkle = kps[15];
+  const rShoulder = kps[6], rHip = kps[12], rKnee = kps[14];
+  
+  const useLeft = visible(lHip) && visible(lKnee) && visible(lShoulder);
+  const sh = useLeft ? lShoulder : rShoulder;
+  const hip = useLeft ? lHip : rHip;
+  const knee = useLeft ? lKnee : rKnee;
+  
+  if (!visible(hip)) return;
+  
+  const hipAngle = angle(sh, hip, knee);
+  
+  let phase;
+  if (hipAngle < 80) phase = 'bottom';
+  else if (hipAngle > 160) phase = 'up';
+  else phase = 'mid';
+  
+  if (STATE.prevPhase === 'bottom' && phase === 'up') countRep();
+  STATE.prevPhase = phase !== 'mid' ? phase : STATE.prevPhase;
+  
+  const corrections = [];
+  let score = 100;
+  
+  if (visible(sh) && visible(hip)) {
+    const spineAngle = Math.atan2(sh.y - hip.y, sh.x - hip.x) * 180 / Math.PI;
+    if (Math.abs(spineAngle) < 30 && phase === 'bottom') { corrections.push(t('c_back_round')); score -= 25; }
+  }
+  
+  const phaseLabel = phase === 'bottom' ? t('phase_down') : phase === 'up' ? t('phase_up') : '·';
+  updatePanel(score, corrections[0] || t('c_good'), phaseLabel);
+}
+
+function analyzeBurpee(kps) {
+  // Simplified burpee detection based on hip height relative to shoulders
+  const lShoulder = kps[5], lHip = kps[11], lAnkle = kps[15];
+  const rShoulder = kps[6], rHip = kps[12], rAnkle = kps[16];
+  const nose = kps[0];
+  
+  const useLeft = visible(lHip) && visible(lShoulder);
+  const sh = useLeft ? lShoulder : rShoulder;
+  const hip = useLeft ? lHip : rHip;
+  const ankle = useLeft ? lAnkle : rAnkle;
+  
+  if (!visible(sh) || !visible(hip)) return;
+  
+  // Detect phase by relative positions
+  const bodyHeight = Math.abs(sh.y - (visible(ankle) ? ankle.y : hip.y));
+  const hipRelShoulder = hip.y - sh.y;
+  
+  let phase;
+  if (hipRelShoulder < 0.1 * bodyHeight) phase = 'jump'; // upright
+  else if (hipRelShoulder > 0.8 * bodyHeight && visible(ankle)) phase = 'plank_pos';
+  else if (hipRelShoulder > 0.3 * bodyHeight) phase = 'squat_pos';
+  else phase = 'stand';
+  
+  // Burpee cycle: stand → squat → plank → stand = 1 rep (simplified)
+  const phases = ['stand','squat_pos','plank_pos','jump'];
+  const pi = phases.indexOf(STATE.prevBurpeePhase);
+  const ci = phases.indexOf(phase);
+  
+  if (STATE.prevBurpeePhase === 'plank_pos' && phase === 'stand') countRep();
+  STATE.prevBurpeePhase = phase;
+  
+  const phaseLabels = {stand:t('phase_stand'),squat_pos:t('phase_squat_pos'),plank_pos:t('phase_plank_pos'),jump:t('phase_jump')};
+  updatePanel(95, t('c_good'), phaseLabels[phase] || '·');
+}
+
+// ============================================================
+// UPDATE PANEL
+// ============================================================
+function updatePanel(score, correction, phase) {
+  const smoothed = Math.round(STATE.formScore * 0.8 + score * 0.2);
+  STATE.formScore = smoothed;
+  document.getElementById('panel-score').textContent = smoothed + '%';
+  
+  const corrEl = document.getElementById('correction-msg');
+  corrEl.textContent = correction;
+  corrEl.className = 'correction-msg' + (score < 80 ? ' error' : '');
+  
+  document.getElementById('phase-text').textContent = phase;
+  
+  // Vibrate on critical error
+  if (score < 60 && navigator.vibrate) navigator.vibrate(200);
+}
+
+function countRep() {
+  STATE.reps++;
+  const el = document.getElementById('rep-count');
+  el.textContent = STATE.reps;
+  el.classList.remove('bump');
+  void el.offsetWidth; // reflow
+  el.classList.add('bump');
+  if (navigator.vibrate) navigator.vibrate(50);
+  setTimeout(() => el.classList.remove('bump'), 400);
+}
+
+// ============================================================
+// PAUSE / STOP
+// ============================================================
+function togglePause() {
+  STATE.paused = !STATE.paused;
+  const btn = document.getElementById('btn-pause');
+  btn.textContent = STATE.paused ? t('btn_resume') : t('btn_pause');
+  if (STATE.plankRunning && STATE.paused) {
+    // Save elapsed time
+    STATE._plankElapsed = Date.now() - STATE.plankStartTime;
+  } else if (STATE.plankRunning && !STATE.paused) {
+    STATE.plankStartTime = Date.now() - (STATE._plankElapsed || 0);
+  }
+}
+
+function stopTraining() {
+  if (STATE.animFrame) cancelAnimationFrame(STATE.animFrame);
+  if (STATE.stream) { STATE.stream.getTracks().forEach(t => t.stop()); STATE.stream = null; }
+  
+  const ex = STATE.currentExercise;
+  if (ex && STATE.sessionStart) {
+    const duration = Math.round((Date.now() - STATE.sessionStart) / 1000);
+    let reps = STATE.reps;
+    let score = Math.round(STATE.formScore);
+    
+    if (ex.type === 'time' && STATE.plankStartTime) {
+      reps = Math.floor((Date.now() - STATE.plankStartTime) / 1000);
+    }
+    
+    if (reps > 0 || duration > 5) {
+      addSession({ exercise: ex.id, reps, score, date: new Date().toISOString(), duration });
+      showToast(t('session_saved'));
+    }
+  }
+  
+  STATE.currentExercise = null;
+  renderHome();
+  navigateTo('home');
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function renderStats() {
+  const sessions = getSessions();
+  
+  // Chart
+  const canvas = document.getElementById('scoreChart');
+  drawScoreChart(canvas, sessions.slice(-10));
+  
+  // Sessions list
+  const list = document.getElementById('sessions-list');
+  if (!sessions.length) {
+    list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:14px">${t('no_session')}</div>`;
+  } else {
+    list.innerHTML = [...sessions].reverse().slice(0,20).map(s => {
+      const date = new Date(s.date).toLocaleDateString(STATE.lang === 'fr' ? 'fr-FR' : 'en-US', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      const name = getExName(s.exercise);
+      const isTime = EXERCISES.find(e => e.id === s.exercise)?.type === 'time';
+      const repsStr = isTime ? `${s.reps}s` : s.reps;
+      return `<div class="session-item">
+        <div class="session-item-left">
+          <div class="session-ex">${name}</div>
+          <div class="session-date">${date}</div>
+        </div>
+        <div class="session-item-right">
+          <div class="session-reps">${repsStr}</div>
+          <div class="session-score">${s.score}% form</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  
+  // Total reps bars
+  const bars = document.getElementById('bars-card');
+  const totals = {};
+  sessions.forEach(s => { totals[s.exercise] = (totals[s.exercise] || 0) + (s.reps || 0); });
+  const maxTotal = Math.max(1, ...Object.values(totals));
+  
+  if (!Object.keys(totals).length) {
+    bars.innerHTML = `<div style="color:var(--text-dim);font-size:13px;text-align:center">${t('no_session')}</div>`;
+  } else {
+    bars.innerHTML = Object.entries(totals).sort((a,b) => b[1]-a[1]).map(([exId, total]) => {
+      const pct = Math.round((total / maxTotal) * 100);
+      return `<div class="bar-row">
+        <div class="bar-meta"><span>${getExName(exId)}</span><span class="mono">${total}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function drawScoreChart(canvas, sessions) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth - 40;
+  const H = 160;
+  canvas.width = W;
+  canvas.height = H;
+  
+  ctx.clearRect(0,0,W,H);
+  
+  if (!sessions.length) {
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '13px DM Sans';
+    ctx.textAlign = 'center';
+    ctx.fillText('No data yet', W/2, H/2);
+    return;
+  }
+  
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const pad = { t:10, r:10, b:30, l:30 };
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+  
+  const scores = sessions.map(s => s.score || 0);
+  const minScore = Math.max(0, Math.min(...scores) - 10);
+  const maxScore = Math.min(100, Math.max(...scores) + 10);
+  
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (cH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(pad.l + cW, y);
+    ctx.stroke();
+    const val = Math.round(maxScore - ((maxScore - minScore) / 4) * i);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px Space Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText(val + '%', pad.l - 4, y + 4);
+  }
+  
+  // Line
+  const xStep = scores.length > 1 ? cW / (scores.length - 1) : cW;
+  const points = scores.map((s, i) => ({
+    x: pad.l + (scores.length > 1 ? i * xStep : cW / 2),
+    y: pad.t + cH - ((s - minScore) / (maxScore - minScore)) * cH
+  }));
+  
+  // Area fill
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + cH);
+  grad.addColorStop(0, accent.replace(')', ',0.3)').replace('rgb','rgba').replace('#', 'rgba').replace(')', ',0.3)'));
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, pad.t + cH);
+  points.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(points[points.length-1].x, pad.t + cH);
+  ctx.closePath();
+  ctx.fillStyle = accent + '22';
+  ctx.fill();
+  
+  // Line
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  
+  // Points
+  points.forEach((p, i) => {
+    ctx.fillStyle = accent;
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // Date label
+    const s = sessions[i];
+    const d = new Date(s.date);
+    const label = `${d.getDate()}/${d.getMonth()+1}`;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '9px Space Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, p.x, H - 6);
+  });
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// CLOSE MODAL ON BACKGROUND CLICK
+// ============================================================
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  // Splash
+  setTimeout(() => {
+    document.getElementById('splash').classList.remove('active');
+    
+    const savedProfile = loadProfile();
+    if (savedProfile) {
+      STATE.profile = savedProfile;
+      STATE.lang = savedProfile.lang || 'fr';
+      applyAccent(savedProfile.accent || '#00BFFF');
+      
+      // Sync theme dots
+      document.querySelectorAll('.theme-dot').forEach(d => {
+        d.classList.toggle('selected', d.dataset.color === savedProfile.accent);
+      });
+      
+      applyTranslations();
+      renderHome();
+      navigateTo('home');
+    } else {
+      applyTranslations();
+      navigateTo('profile');
+    }
+  }, 2700);
+  
+  // Handle profile input on profile page
+  document.getElementById('input-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveProfile();
+  });
+}
+
+// On exercise card click in home
+function openExercise(id) {
+  document.getElementById('ex-select-modal').classList.remove('open');
+  STATE.currentExercise = EXERCISES.find(e => e.id === id);
+  document.getElementById('cam-modal').classList.add('open');
+}
+
+init();
+</script>
+</body>
+</html>
